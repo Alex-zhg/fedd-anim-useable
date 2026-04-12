@@ -29,6 +29,8 @@ void reading(void *);
 TaskHandle_t Idle;
 TaskHandle_t Read;
 
+int SensorDistance;
+
 void setup()
 {
 	// delay(1000);
@@ -154,14 +156,21 @@ void reading(void *parameters)
 	{
 		VL53L0X_RangingMeasurementData_t measure;
 		tof.rangingTest(&measure, false);
-		Serial.println(measure.RangeMilliMeter);
-		if(checkInRange(measure.RangeStatus, measure.RangeMilliMeter, DETECT_RANGE))
+		SensorDistance = measure.RangeMilliMeter;
+		Serial.println(SensorDistance);
+		if(checkInRange(measure.RangeStatus, SensorDistance, DETECT_RANGE))
 		{
+			digitalWrite(RED_LED_PIN, HIGH);
+            digitalWrite(BLUE_LED_PIN, LOW);
 			Serial.println("Blocked!");
-			Serial.println(measure.RangeMilliMeter);
+			Serial.println(SensorDistance);
 			stopHead();
 		}
-
+		else 
+		{
+			digitalWrite(RED_LED_PIN, LOW);
+            digitalWrite(BLUE_LED_PIN, HIGH);
+		}
 		// vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
 }

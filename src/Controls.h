@@ -23,6 +23,9 @@
 #define JAW_TURN_DELAY 5
 #define JAW_STOP_DELAY 100
 
+#define RED_LED_PIN P28
+#define BLUE_LED_PIN P27
+
 Servo neck;
 Servo jaw;
 int currentNeckAngle;
@@ -49,6 +52,12 @@ void initControls()
     centerHead();
 
     jaw.write(JAW_MIN_ANGLE);
+
+    pinMode(RED_LED_PIN, OUTPUT);
+    pinMode(BLUE_LED_PIN, OUTPUT);
+    
+    digitalWrite(RED_LED_PIN, LOW);
+    digitalWrite(BLUE_LED_PIN, HIGH);
 }
 
 void centerHead()
