@@ -10,6 +10,11 @@
 // #define INT P22
 #define ADDR 0x30
 #define DETECT_RANGE 500
+#define BZ P38
+#define BEEP_TIME_IDLE 250
+#define BEEP_TIME_DANGER 250 / 3
+#define DANGER_FREQ 880
+#define IDLE_FREQ 1320
 
 Adafruit_VL53L0X tof = Adafruit_VL53L0X();
 TwoWire bus = TwoWire(1);
@@ -165,11 +170,15 @@ void reading(void *parameters)
 			Serial.println("Blocked!");
 			Serial.println(SensorDistance);
 			stopHead();
+			tone(BZ, DANGER_FREQ, BEEP_TIME_DANGER);
+			tone(BZ, DANGER_FREQ, BEEP_TIME_DANGER);
+			tone(BZ, DANGER_FREQ, BEEP_TIME_DANGER);
 		}
 		else 
 		{
 			digitalWrite(RED_LED_PIN, LOW);
             digitalWrite(BLUE_LED_PIN, HIGH);
+			tone(BZ, IDLE_FREQ, BEEP_TIME_IDLE);
 		}
 		// vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
