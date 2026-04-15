@@ -10,7 +10,7 @@
 // #define INT P22
 #define ADDR 0x30
 #define DETECT_RANGE 500
-#define BZ P38
+#define BZ P39
 #define BEEP_TIME_IDLE 250
 #define BEEP_TIME_DANGER 250 / 3
 #define DANGER_FREQ 880
@@ -24,8 +24,8 @@ TwoWire bus = TwoWire(1);
 
 bool checkInRange(int, int, int);
 void stopIdle(bool);
-void turnHeadRight(int);
-void turnHeadLeft(int);
+void turnHeadRight();
+void turnHeadLeft();
 void readTof(int);
 
 void idle(void *);
@@ -88,11 +88,14 @@ void setup()
 		&Read,
 		1
 	);
+
+	digitalWrite(BLUE_LED_PIN, LOW);
+	digitalWrite(RED_LED_PIN, LOW);
 }
 
 void loop()
 {
-
+		
 }
 
 /*
@@ -143,6 +146,9 @@ void turnHeadLeft()
 
 void idle(void *parameters)
 {
+	digitalWrite(BLUE_LED_PIN, HIGH);
+	digitalWrite(RED_LED_PIN, LOW);
+
 	for(;;)
 	{
 		centerHead();
@@ -170,15 +176,17 @@ void reading(void *parameters)
 			Serial.println("Blocked!");
 			Serial.println(SensorDistance);
 			stopHead();
+			/*
 			tone(BZ, DANGER_FREQ, BEEP_TIME_DANGER);
 			tone(BZ, DANGER_FREQ, BEEP_TIME_DANGER);
 			tone(BZ, DANGER_FREQ, BEEP_TIME_DANGER);
+			*/
 		}
 		else 
 		{
 			digitalWrite(RED_LED_PIN, LOW);
             digitalWrite(BLUE_LED_PIN, HIGH);
-			tone(BZ, IDLE_FREQ, BEEP_TIME_IDLE);
+			// tone(BZ, IDLE_FREQ, BEEP_TIME_IDLE);
 		}
 		// vTaskDelay(50 / portTICK_PERIOD_MS);
 	}
