@@ -3,6 +3,8 @@
 #include <Wire.h>
 #include <Adafruit_VL53L0X.h>
 #include "Controls.h"
+#include <WiFi.h>
+#include <WebServer.h>
 
 #define SDA	P23
 #define SCL	P24
@@ -35,6 +37,131 @@ TaskHandle_t Idle;
 TaskHandle_t Read;
 
 int SensorDistance;
+int currentNeckAngle;
+
+const char* WIFI_SSID = "ncsu";
+const char* WIFI_PASS = "";
+
+WebServer server(80);
+
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Robot Radar</title>
+<style>
+  body { background: #111; color: #fff; display: flex; justify-content: center; margin-top: 50px; font-family: monospace; }
+  .radar-wrap { background: #000; display: flex; flex-direction: column; align-items: center; padding: 1rem; gap: 0.75rem; border-radius: 8px; border: 1px solid #333;}
+  .readout { font-size: 13px; display: flex; gap: 24px; }
+  .readout span { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .readout .label { color: #555; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+  .green { color: #0f0; }
+  .red { color: #f00; }
+</style>
+</head>
+<body>
+<div class="radar-wrap">
+  <canvas id="radarCanvas" width="400" height="220"></canvas>
+  <div class="readout">
+    <span>
+      <span class="label">Angle</span>
+      <span class="value green" id="outAngle">—</span>
+    </span>
+    <span>
+      <span class="label">Distance</span>
+      <span class="value green" id="outDist">—</span>
+    </span>
+    <span>
+      <span class="label">Mode</span>
+      <span class="value" id="outMode">—</span>
+    </span>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById("radarCanvas");
+const ctx = canvas.getContext("2d");
+const cx = 200, cy = 210, R = 200;
+const MAX_DIST = 1000; 
+const DETECT_THRESH = 500;
+
+function drawRadar(angle, distance) {
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 1; i <= 4; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * i / 4, Math.PI, 0);
+    ctx.strokeStyle = "#0f0";
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(cx - R, cy);
+  ctx.lineTo(cx + R, cy);
+  ctx.strokeStyle = "#0f0";
+  ctx.lineWidth = 0.5;
+  ctx.stroke();
+
+  const sa = Math.PI - (angle * Math.PI / 180);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(sa) * R, cy - Math.sin(sa) * R);
+  ctx.strokeStyle = "#0f0";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  let blipDistRatio = distance / MAX_DIST;
+  if(blipDistRatio > 1) blipDistRatio = 1;
+  
+  const bx = cx + Math.cos(sa) * blipDistRatio * R;
+  const by = cy - Math.sin(sa) * blipDistRatio * R;
+
+  const isClose = distance <= DETECT_THRESH;
+  ctx.beginPath();
+  ctx.arc(bx, by, 6, 0, Math.PI * 2);
+  ctx.fillStyle = isClose ? "#f00" : "#0f0";
+  ctx.fill();
+
+  const colorClass = isClose ? "red" : "green";
+  
+  document.getElementById("outAngle").textContent = angle + "°";
+  document.getElementById("outAngle").className = "value " + colorClass;
+
+  document.getElementById("outDist").textContent = distance + "mm";
+  document.getElementById("outDist").className = "value " + colorClass;
+
+  const modeEl = document.getElementById("outMode");
+  modeEl.textContent = isClose ? "DETECTED" : "SCANNING";
+  modeEl.className = "value " + colorClass;
+}
+
+setInterval(() => {
+  fetch('/data')
+    .then(res => res.json())
+    .then(data => {
+      drawRadar(data.angle, data.distance);
+    })
+    .catch(err => console.log("Fetch error:", err));
+}, 100);
+</script>
+</body>
+</html>
+)rawliteral";
+
+void handleRoot() {
+  server.send(200, "text/html", index_html);
+}
+
+void handleData() {
+  String json = "{";
+  json += "\"angle\":" + String(currentNeckAngle) + ",";
+  json += "\"distance\":" + String(SensorDistance);
+  json += "}";
+  server.send(200, "application/json", json);
+}
 
 void setup()
 {
@@ -69,6 +196,19 @@ void setup()
 	// digitalWrite(INT, HIGH);
 	initControls();
 
+	WiFi.begin(WIFI_SSID, WIFI_PASS);
+    Serial.print("Connecting to WiFi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("\nIP:");
+    Serial.println(WiFi.localIP());
+
+	server.on("/", handleRoot);
+    server.on("/data", handleData);
+    server.begin();
+
 	xTaskCreatePinnedToCore(
 		idle,
 		"Idle",
@@ -95,7 +235,8 @@ void setup()
 
 void loop()
 {
-		
+	server.handleClient();
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }
 
 /*

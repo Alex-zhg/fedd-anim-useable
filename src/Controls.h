@@ -28,7 +28,7 @@
 
 Servo neck;
 Servo jaw;
-int currentNeckAngle;
+extern int currentNeckAngle;
 int stoppedNeckAngle;
 
 // TwoWire bus = TwoWire(1);
