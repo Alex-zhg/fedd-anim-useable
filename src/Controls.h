@@ -10,8 +10,8 @@
 #define NECK_PIN P21
 #define JAW_PIN P22
 
-#define NECK_MIN_ANGLE 0
-#define NECK_MAX_ANGLE 180
+#define NECK_MIN_ANGLE 45
+#define NECK_MAX_ANGLE 135
 #define NECK_CENTER_ANGLE 90
 
 #define JAW_MIN_ANGLE 0
@@ -23,8 +23,8 @@
 #define JAW_TURN_DELAY 5
 #define JAW_STOP_DELAY 100
 
-#define RED_LED_PIN P28
-#define BLUE_LED_PIN P27
+#define RED_LED_PIN P27
+#define BLUE_LED_PIN P26
 
 Servo neck;
 Servo jaw;

@@ -12,6 +12,7 @@
 // #define INT P22
 #define ADDR 0x30
 #define DETECT_RANGE 500
+#define INTERIOR_RANGE 30
 #define BZ P39
 #define BEEP_TIME_IDLE 250
 #define BEEP_TIME_DANGER 250 / 3
@@ -181,7 +182,7 @@ void setup()
 	}
 
 	Serial.println("Initialized i2c bus!");
-
+	pinMode(SHUTDOWN, OUTPUT);
 	digitalWrite(SHUTDOWN, LOW);
 
 	if (!tof.begin(ADDR, true, &bus))
@@ -310,7 +311,7 @@ void reading(void *parameters)
 		tof.rangingTest(&measure, false);
 		SensorDistance = measure.RangeMilliMeter;
 		Serial.println(SensorDistance);
-		if(checkInRange(measure.RangeStatus, SensorDistance, DETECT_RANGE))
+		if(checkInRange(measure.RangeStatus, SensorDistance, DETECT_RANGE) && SensorDistance > INTERIOR_RANGE)
 		{
 			digitalWrite(RED_LED_PIN, HIGH);
             digitalWrite(BLUE_LED_PIN, LOW);
