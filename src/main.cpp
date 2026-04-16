@@ -55,7 +55,7 @@ void setup()
 	}
 
 	Serial.println("Initialized i2c bus!");
-
+	pinMode(SHUTDOWN, OUTPUT);
 	digitalWrite(SHUTDOWN, LOW);
 
 	if (!tof.begin(ADDR, true, &bus))
